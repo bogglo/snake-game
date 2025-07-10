@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Snake Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: sans-serif;
+      position: relative;
+    }
+    h1 {
+      color: white;
+      margin-top: 20px;
+    }
+    canvas {
+      margin-top: 10px;
+      width: 400px;
+      height: 400px;
+      background-color: black; /* Snake movement area is black */
+      border-top: 4px solid transparent;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-bottom: 6px solid red; /* Bottom border is red */
+      box-shadow: 0 8px 30px rgba(255, 0, 0, 0.6); /* Red glowing shadow */
+    }
+    #gameOverScreen {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: center;
+      display: none;
+    }
+    #gameOverScreen h2 {
+      font-size: 40px;
+      color: #fff;
+      background: linear-gradient(to right, magenta, blue, red);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #tryAgainBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #ff4081;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+    #tryAgainBtn:hover {
+      transform: scale(1.1);
+      background-color: #e91e63;
+    }
+  </style>
+</head>
+<body>
+  <h1>Snake Game</h1>
+  <canvas id="game" width="400" height="400"></canvas>
+  <div id="gameOverScreen">
+    <h2>Game Over!</h2>
+    <button id="tryAgainBtn">🔁 Try Again</button>
+  </div>
+
+  <script>
+    // Game canvas setup
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    // Game Over screen elements
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const tryAgainBtn = document.getElementById("tryAgainBtn");
+
+    // Snake body class
+    class SnakePart {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+      }
+    }
+
+    // Initial game values
+    let speed = 7;
+    const tileCount = 20;
+    const tileSize = canvas.width / tileCount - 2;
+    let headX = 10;
+    let headY = 10;
+    let snakeParts = [];
+    let tailLength = 2;
+    let appleX = 5;
+    let appleY = 5;
+    let inputsXVelocity = 0;
+    let inputsYVelocity = 0;
+    let xVelocity = 0;
+    let yVelocity = 0;
+    let score = 0;
+    let gameOver = false;
+
+    // Sound effect function
+    function playBeep(freq = 880, duration = 0.1) {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + duration);
+    }
+
+    // Generate apple in a random empty spot
+    function generateApple() {
+      let valid = false;
+      while (!valid) {
+        appleX = Math.floor(Math.random() * tileCount);
+        appleY = Math.floor(Math.random() * tileCount);
+        valid = !snakeParts.some(part => part.x === appleX && part.y === appleY)
+              && !(headX === appleX && headY === appleY);
+      }
+    }
+
+    // Main game loop
+    function drawGame() {
+      if (gameOver) return;
+      xVelocity = inputsXVelocity;
+      yVelocity = inputsYVelocity;
+      changeSnakePosition();
+      if (isGameOver()) return;
+      clearScreen();
+      checkAppleCollision();
+      drawApple();
+      drawSnake();
+      drawScore();
+      updateSpeed();
+      setTimeout(drawGame, 1000 / speed);
+    }
+
+    // Speed updates based on score milestones
+    function updateSpeed() {
+      if (score >= 100) {
+        speed = 13;
+      } else if (score >= 50) {
+        speed = 8;
+      } else {
+        speed = 6;
+      }
+    }
+
+    // Check collision with wall or body
+    function isGameOver() {
+      if (yVelocity === 0 && xVelocity === 0) return false;
+      if (headX < 0 || headX >= tileCount || headY < 0 || headY >= tileCount) {
+        showGameOver();
+        return true;
+      }
+      for (let part of snakeParts) {
+        if (part.x === headX && part.y === headY) {
+          showGameOver();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Display Game Over screen
+    function showGameOver() {
+      gameOver = true;
+      playBeep(220, 0.5);
+      gameOverScreen.style.display = "block";
+    }
+
+    // Reset game after Try Again
+    function resetGame() {
+      headX = 10;
+      headY = 10;
+      snakeParts = [];
+      tailLength = 2;
+      generateApple();
+      inputsXVelocity = 0;
+      inputsYVelocity = 0;
+      xVelocity = 0;
+      yVelocity = 0;
+      score = 0;
+      gameOver = false;
+      gameOverScreen.style.display = "none";
+      drawGame();
+    }
+
+    // Display current score
+    function drawScore() {
+      ctx.fillStyle = "white";
+      ctx.font = "15px Verdana";
+      ctx.fillText("Score: " + score, canvas.width - 100, 20);
+    }
+
+    // Fill canvas with black background
+    function clearScreen() {
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Draw the snake body and head
+    function drawSnake() {
+      ctx.fillStyle = "green";
+      for (let part of snakeParts) {
+        ctx.fillRect(part.x * tileCount, part.y * tileCount, tileSize, tileSize);
+      }
+      snakeParts.push(new SnakePart(headX, headY));
+      while (snakeParts.length > tailLength) {
+        snakeParts.shift();
+      }
+      ctx.fillStyle = "orange";
+      ctx.fillRect(headX * tileCount, headY * tileCount, tileSize, tileSize);
+    }
+
+    // Update snake's position based on velocity
+    function changeSnakePosition() {
+      headX += xVelocity;
+      headY += yVelocity;
+    }
+
+    // Draw apple as emoji on canvas
+    function drawApple() {
+      ctx.font = "18px Arial";
+      ctx.fillText("🍅", appleX * tileCount, appleY * tileCount + tileSize);
+    }
+
+    // Check if snake eats the apple
+    function checkAppleCollision() {
+      if (appleX === headX && appleY === headY) {
+        generateApple();
+        tailLength++;
+        score++;
+        playBeep(880, 0.1);
+      }
+    }
+
+    // Handle keyboard input for movement
+    document.body.addEventListener("keydown", (event) => {
+      const key = event.keyCode;
+      if ((key === 38 || key === 87) && inputsYVelocity !== 1) {
+        inputsYVelocity = -1; inputsXVelocity = 0;
+      }
+      if ((key === 40 || key === 83) && inputsYVelocity !== -1) {
+        inputsYVelocity = 1; inputsXVelocity = 0;
+      }
+      if ((key === 37 || key === 65) && inputsXVelocity !== 1) {
+        inputsYVelocity = 0; inputsXVelocity = -1;
+      }
+      if ((key === 39 || key === 68) && inputsXVelocity !== -1) {
+        inputsYVelocity = 0; inputsXVelocity = 1;
+      }
+    });
+
+    // Restart game on button click
+    tryAgainBtn.addEventListener("click", resetGame);
+
+    // Initialize apple and start game
+    generateApple();
+    drawGame();
+  </script>
+</body>
+</html>

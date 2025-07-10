@@ -39,9 +39,7 @@ No installation required. Just hit play and enjoy smooth canvas gameplay directl
 
 ## 📸 Preview Screenshots
 
-![Snake Game Screenshot 1](https://i.postimg.cc/FsS6zVzg/IMG-20250710-112034.jpg)  
-![Snake Game Screenshot 2](https://i.postimg.cc/ry0nZN1X/IMG-20250710-112011.jpg)  
-![Snake Game Screenshot 3](https://i.postimg.cc/76CVcqTM/IMG-20250710-111820.jpg)
+![Snake Game Screenshot 1](https://i.postimg.cc/FsS6zVzg/IMG-20250710-112034.jpg)
 
 *Fast, responsive layout on desktop and mobile browsers*
 
@@ -58,8 +56,6 @@ No installation required. Just hit play and enjoy smooth canvas gameplay directl
 > Built with no external libraries. Fully open source and beginner-friendly!
 
 ---
-
-## 🧠 SEO Smart Embed (invisible)
 
 <!--
 This project is tagged with top arcade game keywords for improved visibility:
